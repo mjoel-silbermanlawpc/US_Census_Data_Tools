@@ -1,8 +1,4 @@
-from imports import *
-
-from input_output import file_loader
-from input_output import file_exporter
-
+import pandas as pd
 
 def percent_remove(df):
     """
@@ -18,7 +14,7 @@ def percent_remove(df):
     return filtered_df
 
 
-def specified_remove(df, column_index, searchTerm):
+def specified_remove(df, column_index, search_term):
     """
     this function is an improved version of percent_remove. It works the same way, except it also:
     1. allows user to specify which column to search in (column_index)
@@ -26,8 +22,8 @@ def specified_remove(df, column_index, searchTerm):
     4. then deletes the row
     5. returns the new df (filtered_df)
     """
-    filtered_df = df.loc[df[df.columns[column_index]] != searchTerm]
-    print("Specified remove of '", searchTerm, "' at column index", column_index, "completed.")
+    filtered_df = df.loc[df[df.columns[column_index]] != search_term]
+    print("Specified remove of '", search_term, "' at column index", column_index, "completed.")
     return filtered_df
 
 
@@ -86,6 +82,111 @@ def concat_dataframes(dfs):
     df_combined = df_combined.reset_index(drop=True)
 
     return df_combined
+
+
+def add_custom_columns(df, x, i, n, prefix):
+    """
+    Adds empty columns to a DataFrame starting from column x, every i columns, n times.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to modify.
+        x (int): The starting column index.
+        i (int): The interval at which to add new columns.
+        n (int): The total number of new columns to add.
+        prefix (str): The string to add before the name of the column to the left.
+
+    Returns:
+        pd.DataFrame: The modified DataFrame with new empty columns.
+    """
+    new_columns = []
+    col_pos = x
+    for _ in range(n):
+        new_col_name = prefix + df.columns[col_pos]
+        new_columns.append((col_pos, new_col_name))
+        col_pos += (i + 1)
+
+    for pos, col_name in new_columns:
+        df.insert(pos, col_name, None)
+
+    return df
+
+def add_shifted_column(df, index, prefix, shift_row, shift_col):
+    """
+    This function allows us to insert a new column at a specified position in the DataFrame.
+    The values for the new column are taken from a specified row and column offset relative
+    to the position of the new column.
+
+    :param df: DataFrame to manipulate
+    :param index: Position at which to insert the new column (1-based index)
+    :param prefix: Prefix to use for the new column's name, which is derived from the column to its left
+    :param shift_row: Number of rows to shift for the fill value (positive for down, negative for up)
+    :param shift_col: Number of columns to shift for the fill value (positive for right, negative for left)
+    :return: Modified DataFrame with the new column inserted
+    """
+    if index < 1 or index > len(df.columns):
+        raise IndexError("Index out of bounds")
+
+    left_col_name = df.columns[index - 1]
+    new_col_name = f"{prefix}{left_col_name}"
+    new_col = [None] * len(df)
+
+    for i in range(len(df)):
+        shifted_row = i + shift_row
+        shifted_col = index - 1 + shift_col
+        if 0 <= shifted_row < len(df) and 0 <= shifted_col < len(df.columns):
+            new_col[i] = df.iloc[shifted_row, shifted_col]
+
+    df.insert(index, new_col_name, new_col)
+    print("New column at index", index, "added, with prefix '", prefix, "'. Row adjustment of", shift_row, "and column adjustment of", shift_col, "for fill value.")
+
+    return df
+
+
+def sum_and_flatten(df, start, end, geo_list):
+
+    df_copy = df.copy()
+
+    for col in df_copy.columns[start:end + 1]:
+        col_sum = df_copy[col].sum()
+        df_copy.at[0, col] = col_sum
+
+    df_copy = df_copy.iloc[[0]]
+    new_geoname = " | ".join(geo_list)
+    df_copy.iloc[0, df_copy.columns.get_loc('GEONAME')] = new_geoname
+
+    return df_copy
+
+def df_to_percentages(df, start_idx, end_idx):
+    df_copy = df.copy()
+    total_value = df_copy.iat[0, 3]
+    for col in df_copy.columns[start_idx:end_idx + 1]:
+        df_copy[col] = df_copy[col].astype('float64')
+        df_copy.at[df_copy.index[0], col] = (df_copy.at[df_copy.index[0], col] / total_value) * 100
+
+    # Add '%' to the header row labels
+    new_columns = []
+    for i, col in enumerate(df_copy.columns):
+        if start_idx <= i <= end_idx:
+            new_columns.append(f"{col} %")
+        else:
+            new_columns.append(col)
+    df_copy.columns = new_columns
+
+    return df_copy
+
+
+def apply_weights(df, start_idx, end_idx, weight_list):
+    df_copy = df.copy()
+    if len(weight_list) != len(df_copy):
+        raise ValueError("Length of weight_list must match the number of rows in the DataFrame")
+
+    n = len(weight_list)
+
+    for i, weight in enumerate(weight_list):
+        # Multiply by weight*n and cast to float to avoid dtype issues
+        df_copy.iloc[i, start_idx:end_idx + 1] = (df_copy.iloc[i, start_idx:end_idx + 1] * weight * n).astype(float)
+
+    return df_copy
 
 
 header = ["TBLID", "GEOID", "GEONAME", "TITLE", "Total, race and ethnicity", "Hispanic or Latino", "White alone",

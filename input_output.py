@@ -1,4 +1,5 @@
-from imports import *
+import pandas as pd
+
 
 def file_loader(filepath, mode, header_option=None):
     """
@@ -32,7 +33,7 @@ def file_loader(filepath, mode, header_option=None):
     return df
 
 
-def file_exporter(df, filepath, mode):
+def file_exporter(df, filepath, mode=2):
     """
     This function:
     1. Takes input of a data frame and file location
@@ -40,7 +41,7 @@ def file_exporter(df, filepath, mode):
     3. Handles any exceptions that may occur during the export process
     4. No return
     """
-    if mode == 1 :
+    if mode == 1:
         try:
             df.to_excel(filepath, header=True, index=False)
             print(f"Data frame successfully exported to {filepath}")
@@ -53,3 +54,20 @@ def file_exporter(df, filepath, mode):
         except Exception as e:
             print(f"An error occurred while exporting the data frame: {e}")
 
+
+def file_namer(df, mode):
+    filepath = '-'.join(df.iloc[:, 2].astype(str))
+    if len(filepath) > 200:
+        filepath = filepath[:200]
+    filepath += f'_{df.iloc[0, -2]}'
+    filepath += f'_{df.iloc[0, -1]}'
+    filepath = filepath.replace(',', '')
+    filepath = filepath.replace(' ', '')
+    filepath = filepath.replace('|', '-')
+    if len(filepath) > 250:
+        filepath = filepath[:250]
+    if mode == 1:
+        filepath += f'.csv'
+    if mode == 2:
+        filepath += f'.pdf'
+    return filepath
