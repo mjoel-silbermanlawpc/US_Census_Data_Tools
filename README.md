@@ -31,7 +31,9 @@ All functions related to data wrangling will be stored here. Functions include t
 ## Sample Usages
 
 ### loading a file:
-``` activeFile = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_TOTAL_WIDENED.csv', 2, 0) ```
+```
+activeFile = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_TOTAL_WIDENED.csv', 2, 0)
+```
 
 ### exporting a file:
 ```
