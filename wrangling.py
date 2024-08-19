@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def percent_remove(df):
     """
     this function removes the 'Percent' rows from the spreadsheet:
@@ -110,6 +111,7 @@ def add_custom_columns(df, x, i, n, prefix):
 
     return df
 
+
 def add_shifted_column(df, index, prefix, shift_row, shift_col):
     """
     This function allows us to insert a new column at a specified position in the DataFrame.
@@ -137,12 +139,21 @@ def add_shifted_column(df, index, prefix, shift_row, shift_col):
             new_col[i] = df.iloc[shifted_row, shifted_col]
 
     df.insert(index, new_col_name, new_col)
-    print("New column at index", index, "added, with prefix '", prefix, "'. Row adjustment of", shift_row, "and column adjustment of", shift_col, "for fill value.")
+    print("New column at index", index, "added, with prefix '", prefix, "'. Row adjustment of", shift_row,
+          "and column adjustment of", shift_col, "for fill value.")
 
     return df
 
 
 def sum_and_flatten(df, start, end, geo_list):
+    '''
+    This function essentially converts a multiple row df into a single row one, by summing select columns and concatenating others.
+    :param df: input df, usually more than 1 row
+    :param start: column to start summing
+    :param end: last column to sum
+    :param geo_list: list of geonames
+    :return: the new flattened df, df_copy
+    '''
 
     df_copy = df.copy()
 
@@ -156,7 +167,38 @@ def sum_and_flatten(df, start, end, geo_list):
 
     return df_copy
 
+
+def avg_and_flatten(df, start, end, geo_list):
+    '''
+    This function converts a multiple row percentage df into a single row one, by taking the average percentage of some columns and concatenating others.
+    :param df: input df, usually more than 1 row
+    :param start: column to start averaging
+    :param end: last column to average
+    :param geo_list: list of geonames
+    :return: the new flattened averaged df, df_copy
+    '''
+
+    df_copy = df.copy()
+
+    for col in df_copy.columns[start:end + 1]:
+        col_sum = df_copy[col].sum()
+        df_copy.at[0, col] = col_sum / len(geo_list)
+
+    df_copy = df_copy.iloc[[0]]
+    new_geoname = " | ".join(geo_list)
+    df_copy.iloc[0, df_copy.columns.get_loc('GEONAME')] = new_geoname
+
+    return df_copy
+
+
 def df_to_percentages(df, start_idx, end_idx):
+    '''
+    This function turns an input df of raw numbers into one of percentages. It divides select columns by the total, and adds a percent symbol to column names.
+    :param df: input df, must be 1 row
+    :param start_idx: where to start the dividing
+    :param end_idx: where to end the dividing
+    :return: df_copy, the new df
+    '''
     df_copy = df.copy()
     total_value = df_copy.iat[0, 3]
     for col in df_copy.columns[start_idx:end_idx + 1]:
@@ -175,12 +217,25 @@ def df_to_percentages(df, start_idx, end_idx):
     return df_copy
 
 
-def apply_weights(df, start_idx, end_idx, weight_list):
+def apply_weights(df, start_idx, end_idx, weight_list, mode=1):
+    '''
+    this function applies the user input weights to the input df. The weights have already been validated, so all it must do is iterate through and multiply weights.
+    :param df: input df (must be length of weight list)
+    :param start_idx: column of where to start weighting
+    :param end_idx: column where to end weighting
+    :param weight_list: list of weights
+    :param mode: apply weights to percentage or raw
+    :return:new weighted df, df_copy
+    '''
     df_copy = df.copy()
+
     if len(weight_list) != len(df_copy):
         raise ValueError("Length of weight_list must match the number of rows in the DataFrame")
 
-    n = len(weight_list)
+    if mode == 1:
+        n = len(weight_list)
+    if mode == 2:
+        n = 1
 
     for i, weight in enumerate(weight_list):
         # Multiply by weight*n and cast to float to avoid dtype issues
@@ -192,156 +247,3 @@ def apply_weights(df, start_idx, end_idx, weight_list):
 header = ["TBLID", "GEOID", "GEONAME", "TITLE", "Total, race and ethnicity", "Hispanic or Latino", "White alone",
           "Black or African American alone", "American Indian and Alaska Native alone", "Asian alone",
           "Native Hawaiian and Other Pacific Islander alone", "Two or More", "CC", "CC Title"]
-
-'''
-# example usage:
-# load the spreadsheet
-activeFile = file_loader('spreadsheets/hd_m/hd_m_EEOALL1W_C21.csv', 2)
-# remove percent rows
-activeFile = percent_remove(activeFile)
-# remove the empty 'Total, both sexes' rows
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-# rename the actual total row
-activeFile = index_replace(activeFile, 0,3, 5,'Total')
-# remove the empty 'Male' rows
-activeFile = specified_remove(activeFile,3,'Male')
-# rename the actual male row
-activeFile = index_replace(activeFile, 1,3, 4,'Male')
-# remove the empty 'Female' rows
-activeFile = specified_remove(activeFile,3,'Female')
-# rename the actual female row
-activeFile = index_replace(activeFile, 2,3, 3,'Female')
-# export the completed table
-file_exporter(activeFile, 'spreadsheets/p_hd_m/p_hd_m_EEOALL1W_C21.csv', 2)
-
-activeFile = file_loader('spreadsheets/hd_m/hd_m_EEOALL1W_P01.csv', 2)
-activeFile = percent_remove(activeFile)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female')
-file_exporter(activeFile, 'spreadsheets/p_hd_m/p_hd_m_EEOALL1W_P01.csv', 2)
-
-activeFile = file_loader('spreadsheets/hd_m/hd_m_EEOALL1W_P06.csv', 2)
-activeFile = percent_remove(activeFile)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female')
-file_exporter(activeFile, 'spreadsheets/p_hd_m/p_hd_m_EEOALL1W_P06.csv', 2)
-
-activeFile = file_loader('spreadsheets/hd_m/hd_m_EEOALL1W_P07.csv', 2)
-activeFile = percent_remove(activeFile)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female')
-file_exporter(activeFile, 'spreadsheets/p_hd_m/p_hd_m_EEOALL1W_P07.csv', 2)
-
-activeFile = file_loader('spreadsheets/hd_m/hd_m_EEOALL1W_P10.csv', 2)
-activeFile = percent_remove(activeFile)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female')
-file_exporter(activeFile, 'spreadsheets/p_hd_m/p_hd_m_EEOALL1W_P10.csv', 2)
-
-c21 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_C21.csv',2)
-p01 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_P01.csv',2)
-p06 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_P06.csv',2)
-p07 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_P07.csv',2)
-p10 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1W_P10.csv',2)
-
-grouped = [c21, p01, p06, p07, p10]
-total = concat_dataframes(grouped)
-
-file_exporter(total,'spreadsheets/FINAL/FINAL_EEOALL1W_TOTAL.csv',2)
-'''
-
-'''
-activeFile = file_loader('spreadsheets/Originals/EEOALL1WC_P01.csv',2)
-activeFile = column_row_delete(activeFile, 20, 1)
-activeFile = column_row_delete(activeFile, 18, 1)
-activeFile = column_row_delete(activeFile, 16, 1)
-activeFile = column_row_delete(activeFile, 14, 1)
-activeFile = column_row_delete(activeFile, 12, 1)
-activeFile = column_row_delete(activeFile, 10, 1)
-activeFile = column_row_delete(activeFile, 8, 1)
-activeFile = column_row_delete(activeFile, 6, 1)
-activeFile = column_row_delete(activeFile, 3, 1)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total %')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male %')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female %')
-activeFile.columns = header
-file_exporter(activeFile, 'spreadsheets/FINAL/FINAL_EEOALL1WC_P01.csv',2)
-
-activeFile = file_loader('spreadsheets/Originals/EEOALL1WC_P07.csv', 2)
-activeFile = column_row_delete(activeFile, 20, 1)
-activeFile = column_row_delete(activeFile, 18, 1)
-activeFile = column_row_delete(activeFile, 16, 1)
-activeFile = column_row_delete(activeFile, 14, 1)
-activeFile = column_row_delete(activeFile, 12, 1)
-activeFile = column_row_delete(activeFile, 10, 1)
-activeFile = column_row_delete(activeFile, 8, 1)
-activeFile = column_row_delete(activeFile, 6, 1)
-activeFile = column_row_delete(activeFile, 3, 1)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total %')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male %')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female %')
-activeFile.columns = header
-file_exporter(activeFile, 'spreadsheets/FINAL/FINAL_EEOALL1WC_P07.csv', 2)
-
-activeFile = file_loader('spreadsheets/Originals/EEOALL1WC_P10.csv', 2)
-activeFile = column_row_delete(activeFile, 20, 1)
-activeFile = column_row_delete(activeFile, 18, 1)
-activeFile = column_row_delete(activeFile, 16, 1)
-activeFile = column_row_delete(activeFile, 14, 1)
-activeFile = column_row_delete(activeFile, 12, 1)
-activeFile = column_row_delete(activeFile, 10, 1)
-activeFile = column_row_delete(activeFile, 8, 1)
-activeFile = column_row_delete(activeFile, 6, 1)
-activeFile = column_row_delete(activeFile, 3, 1)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = column_row_delete(activeFile, 0, 0)
-activeFile = specified_remove(activeFile,3,'Total, both sexes')
-activeFile = index_replace(activeFile, 0,3, 5,'Total %')
-activeFile = specified_remove(activeFile,3,'Male')
-activeFile = index_replace(activeFile, 1,3, 4,'Male %')
-activeFile = specified_remove(activeFile,3,'Female')
-activeFile = index_replace(activeFile, 2,3, 3,'Female %')
-activeFile.columns = header
-file_exporter(activeFile, 'spreadsheets/FINAL/FINAL_EEOALL1WC_P10.csv', 2)
-
-p01 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1WC_P01.csv')
-p07 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1WC_P07.csv')
-p10 = file_loader('spreadsheets/FINAL/FINAL_EEOALL1WC_P10.csv')
-
-grouped = [p01, p07, p10]
-total = concat_dataframes(grouped)
-
-file_exporter(total,'spreadsheets/FINAL/FINAL_EEOALL1WC_TOTAL.csv',2)
-'''

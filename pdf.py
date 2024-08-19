@@ -13,6 +13,12 @@ import matplotlib.pyplot as plt
 
 
 def create_pdf(df, filename):
+    '''
+    This function creates a nicely organized, easily modifiable pdf file. It takes a resultant PERCENT dataframe as input (must be one row). It then assigns the percentages and names to variables, and then placed them in the pdf window. It uses a table to display the percentages, and also creates a pie chart of the demographics (colors need to be updated for readability).
+    :param df: input single row data frame
+    :param filename: name of output file (can use file_namer)
+    :return: none
+    '''
 
     cc = df.iloc[0,-2]
     cc_title = df.iloc[0,-1]
@@ -21,11 +27,11 @@ def create_pdf(df, filename):
     black_percent = df.iloc[0, 12]
     hispanic_percent = df.iloc[0, 6]
     asian_percent = df.iloc[0, 18]
-    am_indian_percent = df.iloc[0, 21]
-    pac_hawaiian_percent = df.iloc[0, 22]
+    am_indian_percent = df.iloc[0, 15]
+    pac_hawaiian_percent = df.iloc[0, 21]
     two_or_more_percent = df.iloc[0, 24]
     white_percent = df.iloc[0, 9]
-    minority_percent = black_percent + hispanic_percent + asian_percent + am_indian_percent + two_or_more_percent
+    minority_percent = black_percent + hispanic_percent + asian_percent + am_indian_percent + pac_hawaiian_percent+two_or_more_percent
 
 
     c = canvas.Canvas(filename, pagesize=letter)
@@ -66,10 +72,10 @@ def create_pdf(df, filename):
 
     # Table data
     table_data = [
-        ["", "Females", "Minorities", "Black", "Hispanic", "Asian", "Am. Indian", "Pac / Hawaiian", "Two or More"],
+        ["", "Females", "Minorities", "Black", "Hispanic", "Asian", "Am. Indian", "Pac/Hawaiian", "Two or More"],
         ["Census Area", f"{female_percent:.1f}%", f"{minority_percent:.1f}%", f"{black_percent:.1f}%",
-         f"{hispanic_percent:.1f}%", f"{asian_percent:.1f}%", f"{am_indian_percent:.1f}%",f"{two_or_more_percent:.1f}%", f"{pac_hawaiian_percent:.1f}%"],
-        ["Actual", 37.5, 35.9, 14.5, 12.3, 8.0, 0.0, 0.0, 1.1]
+         f"{hispanic_percent:.1f}%", f"{asian_percent:.1f}%", f"{am_indian_percent:.1f}%",f"{pac_hawaiian_percent:.1f}%", f"{two_or_more_percent:.1f}%"],
+        ["Actual", "37.5%", 35.9, 14.5, 12.3, 8.0, 0.0, 0.0, 1.1]
     ]
 
     # Create the table

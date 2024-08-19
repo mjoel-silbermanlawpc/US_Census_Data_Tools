@@ -3,6 +3,7 @@ import pandas as pd
 from validators import *
 from visuals import print_table
 from wrangling import sum_and_flatten
+from wrangling import avg_and_flatten
 from wrangling import df_to_percentages
 from wrangling import apply_weights
 
@@ -147,12 +148,20 @@ def cc_geo_lookup_c(df, cc_column, geo_column):
 
 
 def custom_area_builder(df, cc_column, geo_column):
+    '''
+    This function allows us to build custom census areas with weights. It Validates all inputs, and creates 3 new dfs. One for the raw selected data, the next for a flattened (total number) data, and the last for percentages.
+
+    :param df: input df (census sheet, WIDENED)
+    :param cc_column: column of census codes
+    :param geo_column: column of geonames
+    :return: list of dfs
+
+    '''
     df_list = []
 
     valid_codes = df.iloc[:, cc_column].tolist()
     cc = validate_int_list(valid_codes, "Census Code")
     df = df[df.iloc[:, cc_column] == cc]
-
     print("Enter how many GEONAMES to consolidate:")
     number_of_geos = validate_int_min(0)
     geo_list = list()
@@ -167,8 +176,8 @@ def custom_area_builder(df, cc_column, geo_column):
     result_df = pd.DataFrame()
 
     for n in geo_list:
-        filtered_df = df[df.iloc[:, geo_column] == n]
-        result_df = result_df._append(filtered_df, ignore_index=True)
+        filtered_row = df[df.iloc[:, geo_column] == n]
+        result_df = result_df._append(filtered_row, ignore_index=True)
 
     if not weight_list:
         df_list.append(result_df)
@@ -177,20 +186,85 @@ def custom_area_builder(df, cc_column, geo_column):
         result_df = apply_weights(result_df, 3, 26, weight_list)
         df_list.append(result_df)
 
-    flattened_df = sum_and_flatten(result_df, 3, 26, geo_list)
-
-    df_list.append(flattened_df)
-    percent_flattened_df = df_to_percentages(flattened_df, 3, 26)
-    df_list.append(percent_flattened_df)
+    flattened_result_df = sum_and_flatten(result_df, 3, 26, geo_list)
+    df_list.append(flattened_result_df)
+    percent_flattened_result_df = df_to_percentages(flattened_result_df, 3, 26)
+    df_list.append(percent_flattened_result_df)
 
     print_table(result_df)
-    print_table(flattened_df)
-    print_table(percent_flattened_df)
+    print_table(flattened_result_df)
+    print_table(percent_flattened_result_df)
+
+    return df_list
+
+
+def ym_custom_area_builder(df, cc_column, geo_column):
+    '''
+
+    This function is a modified version of custom_area_builder. It calculates consolidated areas based on the way Yocom & Mckee does it (thus, it matches its output). Weights have not been entirely implemented yet. It Validates all inputs, and creates 3 new dfs. One for the raw selected data, the next for a flattened (total number) data, and the last for percentages.
+
+    :param df: input df (census sheet, WIDENED)
+    :param cc_column: column of census codes
+    :param geo_column: column of geonames
+    :return: list of dfs
+
+    '''
+    df_list = []
+
+    valid_codes = df.iloc[:, cc_column].tolist()
+    cc = validate_int_list(valid_codes, "Census Code")
+    df = df[df.iloc[:, cc_column] == cc]
+    print("Enter how many GEONAMES to consolidate:")
+    number_of_geos = validate_int_min(0)
+    geo_list = list()
+    valid_geos = df.iloc[:, geo_column].tolist()
+
+    for i in range(number_of_geos):
+        geo = validate_string(valid_geos, "GEONAME")
+        print(geo)
+        geo_list.append(geo)
+
+    weight_list = validate_weights(geo_list)
+    result_df = pd.DataFrame()
+
+    for n in geo_list:
+        filtered_row = df[df.iloc[:, geo_column] == n]
+        result_df = result_df._append(filtered_row, ignore_index=True)
+
+    df_list.append(result_df)
+    flattened_result_df = sum_and_flatten(result_df, 3, 26, geo_list)
+    df_list.append(flattened_result_df)
+    percent_result_df = pd.DataFrame()
+    percent_flattened_result_df = pd.DataFrame()
+
+    for n in geo_list:
+        filtered_row = result_df[result_df.iloc[:, geo_column] == n]
+        filtered_row = df_to_percentages(filtered_row, 3, 26)
+
+        percent_result_df = percent_result_df._append(filtered_row, ignore_index=True)
+
+    percent_flattened_result_df = avg_and_flatten(percent_result_df, 3, 26, geo_list)
+
+    if not weight_list:
+        print()
+        df_list.append(percent_flattened_result_df)
+
+    else:
+        print()
+        percent_flattened_result_df = apply_weights(percent_flattened_result_df, 3, 26, weight_list, 2)
+        df_list.append(percent_flattened_result_df)
+
+    print_table(result_df)
+    print_table(flattened_result_df)
+    print_table(percent_flattened_result_df)
 
     return df_list
 
 
 def lookup_menu(active_file, c_active_file):
+    '''
+    old function for original lookups. Deprecated for widened data.
+    '''
     # super simple menu
     while True:
         choice = input("Enter 1 for 1W Lookup | 2 for 1WC Lookup | Anything else to exit: ")

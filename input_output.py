@@ -56,6 +56,13 @@ def file_exporter(df, filepath, mode=2):
 
 
 def file_namer(df, mode):
+    '''
+    This function names file in accordance to the passed data frame components. It will name the output csv/pdf with the location info, plus the census code and title.
+
+    :param df: input df
+    :param mode: whether to name as pdf or csv
+    :return: string of the file name
+    '''
     filepath = '-'.join(df.iloc[:, 2].astype(str))
     if len(filepath) > 200:
         filepath = filepath[:200]

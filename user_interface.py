@@ -1,6 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 
+'''
+This is an experimental implementation of a simple UI. Currently, it allows the user to type in a census code or geoname, and it will create an autofill box where a selection can be made. More features are yet to be added, as it has no functionality or integration yet.
+
+'''
 def on_keyrelease(event, entry, items, listbox):
     value = entry.get().lower()
     listbox.delete(0, tk.END)

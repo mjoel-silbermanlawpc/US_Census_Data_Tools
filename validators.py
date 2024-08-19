@@ -1,5 +1,11 @@
 
 def validate_string(list_in, string_type):
+    '''
+    This function validates user input. It loops until the user input matches a string found within a given list.
+    :param list_in: input list to search within
+    :param string_type: for output purposes, the type (such as GEONAME). Essentially the column name (could be improved)
+    :return: found_term, the user input which was found in the list
+    '''
     while True:
         try:
             print('Enter', string_type, ':')
@@ -17,6 +23,12 @@ def validate_string(list_in, string_type):
 
 
 def validate_int_list(list_in, int_type):
+    '''
+    This function validates user input. It loops until the user input matches an int found within a given list.
+    :param list_in: input list to search within
+    :param int_type: for output purposes, the type (such as census code). Essentially the column name (could be improved)
+    :return: found_term, the user input which was found in the list
+    '''
     while True:
         try:
             print("Enter", int_type, ":")
@@ -31,6 +43,9 @@ def validate_int_list(list_in, int_type):
 
 
 def validate_int_min(lower):
+    '''
+    This function validates integers. It is passed a lower threshold, and runs until the input exceeds it. (used in custom area building)
+    '''
     while True:
         try:
             num = int(input())
@@ -43,6 +58,11 @@ def validate_int_min(lower):
 
 
 def validate_weights(name_list):
+    '''
+    This function creates a list of weights that can be used for custom census areas. It validates all user input, and ensures the weights total to 1.
+    :param name_list: the list of geonames. It is used to know the appropriate length of the weight list, as well as which specific place to ask for.
+    :return: name_list, a list of the percentages.
+    '''
     weight_choice = input("Would you like to use custom weights? (Y/N)")
     if weight_choice.lower() == 'y':
         while True:
